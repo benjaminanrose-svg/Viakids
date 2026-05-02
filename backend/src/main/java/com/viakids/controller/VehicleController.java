@@ -1,5 +1,6 @@
 package com.viakids.controller;
 
+import com.viakids.dto.VehicleDto;
 import com.viakids.model.Vehicle;
 import com.viakids.service.VehicleService;
 import lombok.RequiredArgsConstructor;
@@ -26,14 +27,13 @@ public class VehicleController {
     }
 
     @PostMapping
-    public ResponseEntity<Vehicle> create(@RequestBody Vehicle vehicle) {
-        return ResponseEntity.ok(vehicleService.save(vehicle));
+    public ResponseEntity<Vehicle> create(@RequestBody VehicleDto dto) {
+        return ResponseEntity.ok(vehicleService.create(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Vehicle> update(@PathVariable Long id, @RequestBody Vehicle vehicle) {
-        vehicle.setId(id);
-        return ResponseEntity.ok(vehicleService.save(vehicle));
+    public ResponseEntity<Vehicle> update(@PathVariable Long id, @RequestBody VehicleDto dto) {
+        return ResponseEntity.ok(vehicleService.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
