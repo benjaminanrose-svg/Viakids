@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: viakids-postgres
+    environment:
+      POSTGRES_USER: viakids
+      POSTGRES_PASSWORD: viakids123
+      POSTGRES_DB: viakids_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - viakids-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U viakids -d viakids_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: viakids-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: viakids
+      RABBITMQ_DEFAULT_PASS: viakids123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - viakids-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: viakids-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/viakids_db
+      SPRING_DATASOURCE_USERNAME: viakids
+      SPRING_DATASOURCE_PASSWORD: viakids123
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: viakids
+      SPRING_RABBITMQ_PASSWORD: viakids123
+      JWT_SECRET: ViaKidsSecretKeyForJWTTokenGenerationAndValidation2024Chile
+      JWT_EXPIRATION: 86400000
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - viakids-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: viakids-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - viakids-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+
+networks:
+  viakids-network:
+    driver: bridge
