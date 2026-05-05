@@ -165,15 +165,13 @@ export default function Students() {
                 <input className="input-field" value={form.school} onChange={e => setForm({...form, school: e.target.value})} />
               </div>
             </div>
-            {!editing && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Apoderado</label>
-                <select className="input-field" value={form.apoderadoId} onChange={e => setForm({...form, apoderadoId: e.target.value})} required>
-                  <option value="">Seleccionar apoderado...</option>
-                  {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                </select>
-              </div>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Apoderado</label>
+              <select className="input-field" value={form.apoderadoId} onChange={e => setForm({...form, apoderadoId: e.target.value})} required>
+                <option value="">Seleccionar apoderado...</option>
+                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+              </select>
+            </div>
             <div className="flex gap-3 pt-2">
               <button type="submit" className="btn-primary flex-1">{editing ? 'Actualizar' : 'Crear'}</button>
               <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">Cancelar</button>

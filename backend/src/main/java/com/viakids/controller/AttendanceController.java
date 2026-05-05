@@ -65,7 +65,7 @@ public class AttendanceController {
         );
 
         return ResponseEntity.ok(Map.of(
-                "student", student.getName(),
+                "student", Map.of("name", student.getName()),
                 "action", request.getAction(),
                 "timestamp", hora
         ));

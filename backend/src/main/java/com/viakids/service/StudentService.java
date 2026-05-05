@@ -51,6 +51,11 @@ public class StudentService {
         student.setName(dto.getName());
         student.setGrade(dto.getGrade());
         student.setSchool(dto.getSchool());
+        if (dto.getApoderadoId() != null) {
+            User apoderado = userRepository.findById(dto.getApoderadoId())
+                    .orElseThrow(() -> new IllegalArgumentException("Apoderado no encontrado"));
+            student.setApoderado(apoderado);
+        }
         return studentRepository.save(student);
     }
 
