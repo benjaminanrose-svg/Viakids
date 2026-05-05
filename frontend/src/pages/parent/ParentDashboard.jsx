@@ -16,19 +16,21 @@ export default function ParentDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      api.get('/students'),
-      api.get('/users')
-    ]).then(([s, u]) => {
-      setStudents(s.data)
-      const conds = u.data.filter(u => u.role === 'CONDUCTOR')
-      setConductors(conds)
-      if (conds.length > 0) {
-        api.get(`/gps/location/${conds[0].id}`)
-          .then(r => setGpsLocation(r.data))
-          .catch(() => {})
-      }
-    }).finally(() => setLoading(false))
+    api.get('/students')
+      .then(r => setStudents(r.data))
+      .catch(() => toast.error('Error al cargar estudiantes'))
+      .finally(() => setLoading(false))
+
+    api.get('/gps/conductors')
+      .then(r => {
+        setConductors(r.data)
+        if (r.data.length > 0) {
+          api.get(`/gps/location/${r.data[0].id}`)
+            .then(g => setGpsLocation(g.data))
+            .catch(() => {})
+        }
+      })
+      .catch(() => {})
   }, [])
 
   const refreshGps = () => {
