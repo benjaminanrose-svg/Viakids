@@ -41,7 +41,7 @@ public class AbsenceService {
     }
 
     public List<Absence> getTodayAbsencesForConductor(Long conductorId) {
-        return absenceRepository.findTodayAbsencesForConductor(conductorId, LocalDate.now());
+        return absenceRepository.findTodayAbsencesForConductor(LocalDate.now());
     }
 
     @Transactional
