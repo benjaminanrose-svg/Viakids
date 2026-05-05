@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import api from '../../api/axios'
 import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
@@ -14,6 +14,16 @@ export default function ParentDashboard() {
   const [absenceForm, setAbsenceForm] = useState({ studentId: '', reason: '', date: new Date().toISOString().split('T')[0] })
   const [showAbsence, setShowAbsence] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [lastUpdate, setLastUpdate] = useState(null)
+  const conductorsRef = useRef([])
+
+  const fetchGps = (conds) => {
+    const list = conds || conductorsRef.current
+    if (list.length === 0) return
+    api.get(`/gps/location/${list[0].id}`)
+      .then(r => { setGpsLocation(r.data); setLastUpdate(new Date()) })
+      .catch(() => {})
+  }
 
   useEffect(() => {
     api.get('/students')
@@ -24,20 +34,18 @@ export default function ParentDashboard() {
     api.get('/gps/conductors')
       .then(r => {
         setConductors(r.data)
-        if (r.data.length > 0) {
-          api.get(`/gps/location/${r.data[0].id}`)
-            .then(g => setGpsLocation(g.data))
-            .catch(() => {})
-        }
+        conductorsRef.current = r.data
+        fetchGps(r.data)
       })
       .catch(() => {})
+
+    const interval = setInterval(() => fetchGps(), 10000)
+    return () => clearInterval(interval)
   }, [])
 
   const refreshGps = () => {
-    if (conductors.length === 0) return
-    api.get(`/gps/location/${conductors[0].id}`)
-      .then(r => { setGpsLocation(r.data); toast.success('Ubicación actualizada') })
-      .catch(() => toast.error('Sin datos GPS del conductor'))
+    fetchGps()
+    toast.success('Ubicación actualizada')
   }
 
   const handleAbsence = async (e) => {
@@ -76,15 +84,24 @@ export default function ParentDashboard() {
               <MapPin size={20} className="text-blue-600" />
               <h2 className="font-semibold text-gray-800">Ubicación del Transporte</h2>
             </div>
-            <button onClick={refreshGps} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-              Actualizar
-            </button>
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1 text-xs text-green-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                Auto
+              </span>
+              <button onClick={refreshGps} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                Actualizar
+              </button>
+            </div>
           </div>
           {gpsLocation ? (
             <>
               <BusMap latitude={gpsLocation.latitude} longitude={gpsLocation.longitude} />
               <p className="text-xs text-gray-400 mt-2 text-center">
-                Última actualización: {new Date(gpsLocation.timestamp).toLocaleTimeString('es-CL')}
+                Última actualización: {lastUpdate
+                  ? lastUpdate.toLocaleTimeString('es-CL')
+                  : new Date(gpsLocation.timestamp).toLocaleTimeString('es-CL')}
+                {' · '}se actualiza cada 10 seg
               </p>
             </>
           ) : (
