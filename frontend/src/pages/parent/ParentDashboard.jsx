@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
 import { Bus, BookOpen, MapPin, BellOff, LogOut, AlertCircle } from 'lucide-react'
 import BusMap from '../../components/Map'
+import NotificationBell from '../../components/NotificationBell'
 
 export default function ParentDashboard() {
   const { user, logout } = useAuth()
@@ -57,9 +58,12 @@ export default function ParentDashboard() {
             <p className="text-blue-300 text-sm">{user?.name}</p>
           </div>
         </div>
-        <button onClick={logout} className="flex items-center gap-2 text-blue-200 hover:text-white">
-          <LogOut size={18} /> Salir
-        </button>
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          <button onClick={logout} className="flex items-center gap-2 text-blue-200 hover:text-white">
+            <LogOut size={18} /> Salir
+          </button>
+        </div>
       </header>
 
       <div className="max-w-4xl mx-auto p-6 space-y-6">

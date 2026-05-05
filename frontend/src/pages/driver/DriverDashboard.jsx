@@ -1,8 +1,10 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import api from '../../api/axios'
 import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
-import { MapPin, Navigation, Users, AlertTriangle, LogOut, Bus, QrCode } from 'lucide-react'
+import { MapPin, Navigation, Users, AlertTriangle, LogOut, Bus, QrCode, CheckCircle } from 'lucide-react'
+import QrScanner from '../../components/QrScanner'
+import NotificationBell from '../../components/NotificationBell'
 
 export default function DriverDashboard() {
   const { user, logout } = useAuth()
@@ -12,6 +14,9 @@ export default function DriverDashboard() {
   const [lastPos, setLastPos] = useState(null)
   const [incidentForm, setIncidentForm] = useState({ description: '', severity: 'MEDIA', routeId: '' })
   const [showIncident, setShowIncident] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
+  const [scanAction, setScanAction] = useState('SUBIDA')
+  const [lastScan, setLastScan] = useState(null)
   let watchId = null
 
   useEffect(() => {
@@ -44,6 +49,22 @@ export default function DriverDashboard() {
     toast('Rastreo GPS detenido')
   }
 
+  const handleScan = async (qrCode) => {
+    setShowScanner(false)
+    try {
+      const res = await api.post('/attendance/scan', {
+        qrCode,
+        action: scanAction,
+        routeId: routes[0]?.id || null
+      })
+      setLastScan({ studentName: res.data.student?.name, action: scanAction, time: new Date() })
+      toast.success(`${scanAction === 'SUBIDA' ? 'Subida' : 'Bajada'} registrada: ${res.data.student?.name}`)
+    } catch (err) {
+      const msg = err.response?.data?.message || 'QR no reconocido'
+      toast.error(msg)
+    }
+  }
+
   const handleIncident = async (e) => {
     e.preventDefault()
     try {
@@ -64,9 +85,12 @@ export default function DriverDashboard() {
             <p className="text-blue-300 text-sm">{user?.name}</p>
           </div>
         </div>
-        <button onClick={logout} className="flex items-center gap-2 text-blue-200 hover:text-white">
-          <LogOut size={18} /> Salir
-        </button>
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          <button onClick={logout} className="flex items-center gap-2 text-blue-200 hover:text-white">
+            <LogOut size={18} /> Salir
+          </button>
+        </div>
       </header>
 
       <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -99,6 +123,66 @@ export default function DriverDashboard() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* QR Scanner */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <QrCode size={20} className="text-purple-600" />
+              <h2 className="font-semibold text-gray-800">Escáner QR Asistencia</h2>
+            </div>
+            <button
+              onClick={() => setShowScanner(!showScanner)}
+              className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+            >
+              {showScanner ? 'Cerrar escáner' : 'Abrir escáner'}
+            </button>
+          </div>
+
+          {lastScan && (
+            <div className="flex items-center gap-2 mb-4 bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
+              <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
+              <p className="text-green-700">
+                <span className="font-medium">{lastScan.studentName}</span> —{' '}
+                {lastScan.action === 'SUBIDA' ? 'Subida' : 'Bajada'} a las{' '}
+                {lastScan.time.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+          )}
+
+          {showScanner && (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setScanAction('SUBIDA')}
+                  className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${
+                    scanAction === 'SUBIDA'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Subida al furgón
+                </button>
+                <button
+                  onClick={() => setScanAction('BAJADA')}
+                  className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${
+                    scanAction === 'BAJADA'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Bajada del furgón
+                </button>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-2">
+                <QrScanner onScan={handleScan} />
+              </div>
+              <p className="text-xs text-gray-400 text-center">
+                Apunta la cámara al código QR del estudiante
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Routes */}

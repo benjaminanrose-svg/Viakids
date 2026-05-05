@@ -2,10 +2,13 @@ package com.viakids.controller;
 
 import com.viakids.dto.AbsenceDto;
 import com.viakids.model.Absence;
+import com.viakids.model.Notification.NotificationType;
 import com.viakids.model.Student;
 import com.viakids.model.User;
 import com.viakids.repository.AbsenceRepository;
+import com.viakids.repository.RouteRepository;
 import com.viakids.repository.StudentRepository;
+import com.viakids.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,6 +25,8 @@ public class AbsenceController {
 
     private final AbsenceRepository absenceRepository;
     private final StudentRepository studentRepository;
+    private final RouteRepository routeRepository;
+    private final NotificationService notificationService;
 
     @PostMapping
     public ResponseEntity<Absence> reportAbsence(@RequestBody AbsenceDto dto,
@@ -35,7 +40,24 @@ public class AbsenceController {
                 .reason(dto.getReason())
                 .createdAt(LocalDateTime.now())
                 .build();
-        return ResponseEntity.ok(absenceRepository.save(absence));
+        absenceRepository.save(absence);
+
+        // Notificar a todos los conductores con ruta activa
+        routeRepository.findByActiveTrue().forEach(route -> {
+            if (route.getConductor() != null) {
+                notificationService.send(
+                        route.getConductor().getId(),
+                        "Ausencia registrada",
+                        String.format("%s no asistirá el %s. Motivo: %s",
+                                student.getName(),
+                                absence.getDate(),
+                                dto.getReason() != null ? dto.getReason() : "no especificado"),
+                        NotificationType.AUSENCIA
+                );
+            }
+        });
+
+        return ResponseEntity.ok(absence);
     }
 
     @GetMapping("/today")
