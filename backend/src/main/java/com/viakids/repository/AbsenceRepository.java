@@ -20,5 +20,5 @@ public interface AbsenceRepository extends JpaRepository<Absence, Long> {
     List<Absence> findByApoderadoIdAndDate(@Param("apoderadoId") Long apoderadoId, @Param("date") LocalDate date);
 
     @Query("SELECT a FROM Absence a WHERE a.date = :date")
-    List<Absence> findTodayAbsencesForConductor(@Param("conductorId") Long conductorId, @Param("date") LocalDate date);
+    List<Absence> findTodayAbsencesForConductor(@Param("date") LocalDate date);
 }
